@@ -1,0 +1,6 @@
+- Add all data structure and function prototypes
+	x board
+	x rack
+	- letterBag
+	- shell
+	- playScrabble
