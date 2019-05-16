@@ -1,4 +1,5 @@
-from board import Board
+from letterBag import LetterBag
 
-test = Board()
-test.show()
+test = LetterBag()
+arr = test.getLetters(7)
+print(arr)

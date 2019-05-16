@@ -1,5 +1,5 @@
 x Add all data structure and function prototypes
-- Implement LetterBag
+x Implement LetterBag
 - Implement Rack
 - Implement Board
 - Implement base
