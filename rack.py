@@ -14,10 +14,10 @@ class Rack:
 		pass
 
 	'''
-	Removes <letters> from self.rack and replaces them with <newLetters>.
-	<letters> and <newLetters> is an array of letters.
+	Removes <letters> from self.rack and replaces them with new letters
+	generated from <bag>. Adds <score> to self.score.
 	'''
-	def update(self, letters, newLetters):
+	def update(self, letters, score, bag):
 		pass
 
 	'''

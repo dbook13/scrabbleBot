@@ -1,4 +1,6 @@
 x Add all data structure and function prototypes
+- Implement botTurn in playScrabble (need to make sure my class methods are doing the right thing)
+- Implement humanTurn in playScrabble (need to make sure my class methods are doing the right thing)
 x Implement LetterBag
 - Implement Rack
 - Implement Board

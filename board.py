@@ -26,7 +26,7 @@ class Board:
 	Rack should be an array of letters.
 	Returns tuples of the form (word, coords, score).
 	'''
-	def genPlausableWords(self, rack):
+	def genPlayableWords(self, rack):
 		pass
 
 	'''

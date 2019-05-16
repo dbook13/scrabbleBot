@@ -9,7 +9,7 @@ from bot import chooseWord
 
 sh = Shell()
 
-# Get number of human players
+# Get number of human players and bot type
 sh.display("Welcome to Scrabble!!")
 numHumans = -1
 while True:
@@ -32,7 +32,7 @@ r2 = Rack()
 # Have players take turns until game is done
 while not gameOver(r1, r2):
 	humanTurn()
-	botTurn(botType)
+	botTurn(board, r2, r1, bag, botType)
 
 # Print end game message
 sh.display(board)
@@ -50,13 +50,20 @@ def gameOver(rack1, rack2):
 '''
 Wait for a human to play a word, update everything accordingly.
 '''
-def humanTurn():
-	pass
+def humanTurn(board, rack, bg, shell):
+	# get input from shell and make sure it's a valid input
+	# rack.validLetters
+	# convert input from shell into a valid board input
+	# if not board.playWord: go back to start, else go on
+	# update rack with letters from shell input and score from board.playWord
 
 '''
 Wait for the bot to play a word, update everything accordingly.
 '''
-def botTurn(tpe):
-	pass
+def botTurn(board, rack, opp_rack, bg, tpe):
+	words = board.genPlayableWords(rack)
+	word = chooseWord(board, rack, opp_rack, words, tpe)
+	leftovers = board.update(word[0], word[1])
+	rack.update(leftovers, word[2])
 
 
