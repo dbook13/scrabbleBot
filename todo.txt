@@ -1,6 +1,6 @@
-- Add all data structure and function prototypes
-	x board
-	x rack
-	- letterBag
-	- shell
-	- playScrabble
+x Add all data structure and function prototypes
+- Implement LetterBag
+- Implement Rack
+- Implement Board
+- Implement base
+- Implement oracle
