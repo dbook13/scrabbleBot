@@ -2,8 +2,10 @@
 This class is a Scrabble rack that keeps track of a player's score
 and available letters.
 '''
+import copy
+
 class Rack:
-	def __init__(self, letters): # <letters> is a numpy array of 7 letters.
+	def __init__(self, letters): # <letters> is an array of 7 letters.
 		self.rack = letters
 		self.score = 0
 
@@ -11,18 +13,31 @@ class Rack:
 	Printable version of the class
 	'''
 	def __str__(self):
-		pass
+		letters = ""
+		for i, letter in enumerate(self.rack):
+			if i == 0:
+				letters += letter
+			else:
+				letters += " " + letter
+		return "Score: {} | Letters: {}".format(self.score, letters)
 
 	'''
 	Removes <letters> from self.rack and replaces them with new letters
 	generated from <bag>. Adds <score> to self.score.
 	'''
 	def update(self, letters, score, bag):
-		pass
+		self.score += score
+		for letter in letters:
+			self.rack.remove(letter)
+		self.rack.extend(bag.getLetters(len(letters)))
 
 	'''
 	Returns true if all letters are in self.rack.
 	<letters> is an array of letters.
 	'''
 	def validLetters(self, letters):
-		pass
+		cpy = copy.copy(self.rack)
+		for letter in letters:
+			if letter not in cpy: return False
+			cpy.remove(letter)
+		return True

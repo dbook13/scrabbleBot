@@ -26,8 +26,8 @@ if numHumans > 0:
 # Initialize game
 board = Board()
 bag = letterBag()
-r1 = Rack()
-r2 = Rack()
+r1 = Rack(bag.getLetters(7))
+r2 = Rack(bag.getLetters(7))
 
 # Have players take turns until game is done
 while not gameOver(r1, r2):

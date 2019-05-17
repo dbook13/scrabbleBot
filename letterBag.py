@@ -37,5 +37,4 @@ class LetterBag:
 			probs[util.alphabet.index(letter)] = (1.0*self.letters[letter])/self.total
 			num -= 1
 
-		print(self.letters)
 		return ret
