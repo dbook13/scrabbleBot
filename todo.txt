@@ -4,5 +4,7 @@ x Implement humanTurn outline in playScrabble
 x Implement LetterBag
 x Implement Rack
 - Implement Board
+	x Initialize full size GADDAG
+	- Implement methods
 - Implement base
 - Implement oracle

@@ -1,16 +1,21 @@
 import numpy as np
-from util import buildGaddag
+import util
 
 '''
 This class is a Words with Friends board where position (1,4) is in the
 2nd row and 5th column.
 '''
 class Board:
-	def __init__(self):
+
+	'''
+	Initializes the Board class where <filename> is the name of a dictionary
+	text file containing a new word on each line.
+	'''
+	def __init__(self, filename):
 		self.board = np.empty((15,15), dtype=str)
 		self.specials = util.specialSpaces
 		self.anchors = {(7,7)}
-		self.gdg = util.buildGaddag('./dictionary.txt', 1000)
+		self.gdg = util.buildGaddag(filename)
 		self.letterScores = util.scores
 
 	'''

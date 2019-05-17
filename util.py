@@ -1,11 +1,13 @@
 import gaddag
 
 def buildGaddag(file):
-	words = set()
+	words = []
 	with open(file) as f:
 		for word in f:
-			words.add(word)
+			words.append(word.replace('\n',''))
+	gdg = gaddag.GADDAG(words)
 	print('Read {} words'.format(len(words)))
+	return gdg
 
 alphabet = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
 
