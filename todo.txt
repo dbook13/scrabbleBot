@@ -5,6 +5,14 @@ x Implement LetterBag
 x Implement Rack
 - Implement Board
 	x Initialize full size GADDAG
-	- Implement methods
+	x Implement isWord
+	- Implement update
+	- Test both isWord and update thoroughly with playWord
+	- Implement __str__
+	- Implement score
+		- Count number of letters used in score, if it's 7 then bingo bonus
+	- Implement genPlayableWords
 - Implement base
 - Implement oracle
+- Implement shell
+	- Tell human players that coordinates are (y,x)
