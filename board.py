@@ -18,7 +18,9 @@ class Board:
 	def __init__(self, filename):
 		self.board = np.empty((15,15), dtype=str)
 		self.specials = util.specialSpaces
-		self.anchors = {(7,7,True),(7,7,False)}
+		self.anchors = {(7,7)}
+		self.verCrossSets = {}
+		self.horCrossSets = {}
 		self.gdg = util.buildGaddag(filename)
 		self.letterScores = util.scores
 
@@ -27,7 +29,25 @@ class Board:
 	special spaces not covered by a letter.
 	'''
 	def __str__(self):
-		return 'Scrabble board'
+		string = ''
+		for i in range(0,16):
+			for j in range(0,16):
+				if i == 0 and j == 0: string += '  '
+				if i == 0 and j > 0:
+					string += str(j-1)
+					if j < 11: string += ' '
+				if i > 0 and j == 0:
+					string += str(i-1)
+					if i < 11: string += ' '
+				if i > 0 and j > 0:
+					if self.board[i-1,j-1] == '':
+						string += '-' + ' '
+					else:
+						string += self.board[i-1,j-1] + ' '
+				if j == 15:
+					string += '\n'
+				else: string += ' '
+		return string
 
 	'''
 	Generates a list of tuples of all playable words given the current state of
@@ -39,17 +59,111 @@ class Board:
 		pass
 
 	'''
-	Returns the score of the given word played in the given coordinates
 	'''
-	def score(self, word, coords):
-		return 0
+	def gapSpace(self, pos, vert, before):
+		# get set of words that start with first word
+		# get set of words that end with second word
+		# get intersection of two sets
+		# filter out words that are not equal to len first word plus len second word plus one
+		# add letter at pos len(firstWord) from each remaining word to the proper cross set
+		pass
+
+	'''
+	'''
+	def calcCrossSet(self, pos, vert, before):
+		'''
+		if before:
+			traverse to end of word
+			follow edges to current beginning of word
+			add letter set to proper cross set
+		else:
+			step to end of word
+			follow edges to beginning of word
+			follow the + character if it exists
+			add letter set to proper cross set
+		'''
+		pass
 
 	'''
 	Updates self.board and self.anchors to reflect the newly added word.
 	Returns all letters of the word that were not already on the board.
 	'''
 	def update(self, word, coords):
-		pass
+
+		# Helper function to check if a x or y value is in bounds on the board.
+		def inBounds(val):
+			return val >= 0 and val <= 14
+		
+		# Init local vars
+		(start, end) = coords
+		(y, x) = start
+		pos = 0
+		used = ''
+		vert = (end[0]-start[0], end[1]-start[1]) == (len(word)-1, 0)
+		
+		while(True):
+			if self.board[y,x] != '':
+				if (y,x) == end: break
+				if vert:
+					y += 1
+				else:
+					x += 1
+				pos += 1
+				continue
+			if (y,x) in self.anchors: self.anchors.remove((y,x))
+			self.board[y,x] = word[pos]
+			used += word[pos]
+
+			# anchor square and cross set edits for vertical word
+			if vert:
+
+				# add all squares that might need to be edited
+				potentials = []
+				if inBounds(x-1): potentials.append(((y,x-1), not vert, True))
+				if inBounds(x+1): potentials.append(((y,x+1), not vert, False))
+				if (y,x) == start and inBounds(y-1): potentials.append(((y-1,x), vert, True))
+				if (y,x) == end and inBounds(y+1): potentials.append(((y+1,x), vert, False))
+
+				# edit all potential squares
+				for p in potentials:
+					if self.board[p[0]]: continue
+					if p[0] in self.anchors:
+						self.gapSpace(p[0], p[1], p[2])
+						continue
+					self.anchors.add(p[0])
+					self.calcCrossSet(p[0], p[1],p[2])
+
+			# anchor square and cross set edits for horizontal word
+			else:
+
+				# add all squares that might need to be edited
+				potentials = []
+				if inBounds(y-1): potentials.append(((y-1,x), not vert, True))
+				if inBounds(y+1): potentials.append(((y+1,x), not vert, False))
+				if (y,x) == start and inBounds(x-1): potentials.append(((y,x-1), vert, True))
+				if (y,x) == end and inBounds(x+1): potentials.append(((y,x+1), vert, False))
+
+				# edit all potential squares
+				for p in potentials:
+					if self.board[p[0]]: continue
+					if p[0] in self.anchors:
+						self.gapSpace(p[0], p[1], p[2])
+						continue
+					self.anchors.add(p[0])
+					self.calcCrossSet(p[0], p[1], p[2])
+
+			# update if not in end condition
+			if (y,x) == end: 
+				break
+			else:
+				if vert:
+					y += 1
+				else:
+					x += 1
+				pos += 1
+
+		return used
+
 
 	'''
 	Return true if the given word played on the given coordinates is a valid word.
@@ -139,6 +253,12 @@ class Board:
 					pos = (pos[0]+1,pos[1])
 				else:
 					pos = (pos[0],pos[1]+1)
+
+	'''
+	Returns the score of the given word played in the given coordinates
+	'''
+	def score(self, word, coords):
+		return 0
 
 	'''
 	Called exclusively by human players, attempts to play a word specified by the

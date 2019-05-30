@@ -5,14 +5,18 @@ x Implement LetterBag
 x Implement Rack
 - Implement Board
 	x Initialize full size GADDAG
-	x Implement isWord
 	- Implement update
-	- Test both isWord and update thoroughly with playWord
-	- Implement __str__
-	- Implement score
-		- Count number of letters used in score, if it's 7 then bingo bonus
 	- Implement genPlayableWords
+	- Implement __str__
+- Finalize playScrabble to enable a game of scrabble to be played between two bots
 - Implement base
 - Implement oracle
 - Implement shell
-	- Tell human players that coordinates are (y,x)
+- Implement human playable version
+	- board
+		- Change isWord to work with new definition of anchor squares and cross sets
+		- Test both isWord and update thoroughly with playWord
+		- Implement score
+			- Count number of letters used in score, if it's 7 then bingo bonus
+	- shell
+		- provide helpfull messages about how to interact with the terminal
