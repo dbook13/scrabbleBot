@@ -5,9 +5,9 @@ x Implement LetterBag
 x Implement Rack
 - Implement Board
 	x Initialize full size GADDAG
-	- Implement update
+	x Implement update
 	- Implement genPlayableWords
-	- Implement __str__
+	x Implement __str__
 - Finalize playScrabble to enable a game of scrabble to be played between two bots
 - Implement base
 - Implement oracle

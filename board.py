@@ -24,6 +24,10 @@ class Board:
 		self.gdg = util.buildGaddag(filename)
 		self.letterScores = util.scores
 
+	# Helper function to check if a x or y value is in bounds on the board.
+	def inBounds(self, val):
+		return val >= 0 and val <= 14
+
 	'''
 	Printable version of the class, displays the words on the board and any
 	special spaces not covered by a letter.
@@ -61,38 +65,140 @@ class Board:
 	'''
 	'''
 	def gapSpace(self, pos, vert, before):
+		(y,x) = pos
+		first = None
+		second = None
+		prefix = ""
+		suffix = ""
+		if vert:
+		
 		# get set of words that start with first word
+			y -= 1
+			while True:
+				if not self.inBounds(y) or self.board[y,x] == '': break
+				prefix = self.board[y,x] + prefix
+				y -= 1
+			first = set(self.gdg.starts_with(prefix))
+
 		# get set of words that end with second word
+			y = pos[0]
+			y += 1
+			while True:
+				if not self.inBounds(y) or self.board[y,x] == '': break
+				suffix += self.board[y,x]
+				y += 1
+			second = set(self.gdg.ends_with(suffix))
+
+		# same as above but for horizontal words
+		else:
+			x -= 1
+			while True:
+				if not self.inBounds(x) or self.board[y,x] == '': break
+				prefix = self.board[y,x] + prefix
+				x -= 1
+			first = set(self.gdg.starts_with(prefix))
+			x = pos[1]
+			x += 1
+			while True:
+				if not self.inBounds(x) or self.board[y,x] == '': break
+				suffix += self.board[y,x]
+				x += 1
+			second = set(self.gdg.ends_with(suffix))
+
 		# get intersection of two sets
-		# filter out words that are not equal to len first word plus len second word plus one
-		# add letter at pos len(firstWord) from each remaining word to the proper cross set
-		pass
+		intersection = first.intersection(second)
+
+		# add letter at pos len(firstWord) from each remaining word to the proper cross set if
+		# the word is the right length
+		if vert:
+			self.verCrossSets[pos] = []
+		else:
+			self.horCrossSets[pos] = []
+		count = 0
+		for word in intersection:
+			if len(word) != (len(prefix) + len(suffix) + 1): continue
+			count += 1
+			if vert:
+				self.verCrossSets[pos].append(word[len(prefix)])
+			else:
+				self.horCrossSets[pos].append(word[len(prefix)])
+		if count == 0: self.anchors.remove(pos)
 
 	'''
+	Calculates a cross set for a particular anchor square and word direction,
+	adds it to one of the CrossSets data structures.
 	'''
 	def calcCrossSet(self, pos, vert, before):
-		'''
+		(y,x) = pos
+		node = self.gdg.root
 		if before:
-			traverse to end of word
-			follow edges to current beginning of word
-			add letter set to proper cross set
+			if vert:
+				y += 1
+
+				# Traverse to end of word
+				while True:
+					if not self.inBounds(y+1) or self.board[y+1,x] == '': break
+					y += 1
+				
+				# Follow gaddag edges to beginning of word
+				while True:
+					node = node[self.board[y,x]]
+					if self.board[y-1,x] == '': break
+					y -= 1
+
+				# Add CrossSet
+				if not node.letter_set: self.anchors.remove(pos)
+				self.verCrossSets[pos] = node.letter_set
+			
+			# Same as above but for horizontal words
+			else:
+				x += 1
+				while True:
+					if not self.inBounds(x+1) or self.board[y,x+1] == '': break
+					x += 1
+				while True:
+					node = node[self.board[y,x]]
+					if self.board[y,x-1] == '': break
+					x -= 1
+				if not node.letter_set: self.anchors.remove(pos)
+				self.horCrossSets[pos] = node.letter_set
 		else:
-			step to end of word
-			follow edges to beginning of word
-			follow the + character if it exists
-			add letter set to proper cross set
-		'''
-		pass
+			if vert:
+				y -= 1
+
+				# Follow gaddag edges to beginning of word
+				while True:
+					node = node[self.board[y,x]]
+					if not self.inBounds(y-1) or self.board[y-1,x] == '': break
+					y -= 1
+
+				# Add cross set if it exists
+				if '+' not in node.edges:
+					self.verCrossSets[pos] = []
+					self.anchors.remove(pos)
+				else:
+					node = node['+']
+					self.verCrossSets[pos] = node.letter_set
+			
+			# Same as above but for horizontal words
+			else:
+				x -= 1
+				while True:
+					node = node[self.board[y,x]]
+					if not self.inBounds(x-1) or self.board[y,x-1] == '': break
+					x -= 1
+				if '+' not in node.edges:
+					self.horCrossSets[pos] = []
+					self.anchors.remove(pos)
+				else:
+					node = node['+']
+					self.horCrossSets[pos] = node.letter_set
 
 	'''
 	Updates self.board and self.anchors to reflect the newly added word.
 	Returns all letters of the word that were not already on the board.
 	'''
 	def update(self, word, coords):
-
-		# Helper function to check if a x or y value is in bounds on the board.
-		def inBounds(val):
-			return val >= 0 and val <= 14
 		
 		# Init local vars
 		(start, end) = coords
@@ -100,7 +206,9 @@ class Board:
 		pos = 0
 		used = ''
 		vert = (end[0]-start[0], end[1]-start[1]) == (len(word)-1, 0)
+		potentials = []
 		
+		# Add all letters to the board and find all anchor squares 
 		while(True):
 			if self.board[y,x] != '':
 				if (y,x) == end: break
@@ -114,43 +222,19 @@ class Board:
 			self.board[y,x] = word[pos]
 			used += word[pos]
 
-			# anchor square and cross set edits for vertical word
+			# add all anchor squares to potentials
 			if vert:
-
 				# add all squares that might need to be edited
-				potentials = []
-				if inBounds(x-1): potentials.append(((y,x-1), not vert, True))
-				if inBounds(x+1): potentials.append(((y,x+1), not vert, False))
-				if (y,x) == start and inBounds(y-1): potentials.append(((y-1,x), vert, True))
-				if (y,x) == end and inBounds(y+1): potentials.append(((y+1,x), vert, False))
-
-				# edit all potential squares
-				for p in potentials:
-					if self.board[p[0]]: continue
-					if p[0] in self.anchors:
-						self.gapSpace(p[0], p[1], p[2])
-						continue
-					self.anchors.add(p[0])
-					self.calcCrossSet(p[0], p[1],p[2])
-
-			# anchor square and cross set edits for horizontal word
+				if self.inBounds(x-1): potentials.append(((y,x-1), not vert, True))
+				if self.inBounds(x+1): potentials.append(((y,x+1), not vert, False))
+				if (y,x) == start and self.inBounds(y-1): potentials.append(((y-1,x), vert, True))
+				if (y,x) == end and self.inBounds(y+1): potentials.append(((y+1,x), vert, False))
 			else:
-
 				# add all squares that might need to be edited
-				potentials = []
-				if inBounds(y-1): potentials.append(((y-1,x), not vert, True))
-				if inBounds(y+1): potentials.append(((y+1,x), not vert, False))
-				if (y,x) == start and inBounds(x-1): potentials.append(((y,x-1), vert, True))
-				if (y,x) == end and inBounds(x+1): potentials.append(((y,x+1), vert, False))
-
-				# edit all potential squares
-				for p in potentials:
-					if self.board[p[0]]: continue
-					if p[0] in self.anchors:
-						self.gapSpace(p[0], p[1], p[2])
-						continue
-					self.anchors.add(p[0])
-					self.calcCrossSet(p[0], p[1], p[2])
+				if self.inBounds(y-1): potentials.append(((y-1,x), not vert, True))
+				if self.inBounds(y+1): potentials.append(((y+1,x), not vert, False))
+				if (y,x) == start and self.inBounds(x-1): potentials.append(((y,x-1), vert, True))
+				if (y,x) == end and self.inBounds(x+1): potentials.append(((y,x+1), vert, False))
 
 			# update if not in end condition
 			if (y,x) == end: 
@@ -161,6 +245,15 @@ class Board:
 				else:
 					x += 1
 				pos += 1
+
+		# edit all potential squares
+		for p in potentials:
+			if self.board[p[0]]: continue
+			if p[0] in self.anchors:
+				self.gapSpace(p[0], p[1], p[2])
+				continue
+			self.anchors.add(p[0])
+			self.calcCrossSet(p[0], p[1], p[2])
 
 		return used
 
