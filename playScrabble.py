@@ -5,6 +5,7 @@ from board import Board
 from rack import Rack
 from letterBag import LetterBag
 from bot import chooseWord
+import sys
 
 '''
 Wait for the bot to play a word, update everything accordingly.
@@ -39,7 +40,7 @@ def humanTurn(board, rack, bg, shell):
 	# if not board.playWord: go back to start, else go on
 	# update rack with letters from shell input and score from board.playWord
 
-def play():
+def play(t1, t2):
 
 	# Initialize game
 	b = Board('dictionary.txt')
@@ -51,13 +52,11 @@ def play():
 	count = 0
 	refreshes = 0
 	while not gameOver(refreshes):
-		if count % 10 == 0:
-			print("Have played {} turns".format(count))
-		if botTurn(b, r1, bag, 1, 'base'):
+		if botTurn(b, r1, bag, 1, t1):
 			refreshes = 0
 		else:
 			refreshes += 1
-		if botTurn(b, r2, bag, 2, 'base'):
+		if botTurn(b, r2, bag, 2, t2):
 			refreshes = 0
 		else:
 			refreshes += 1
@@ -66,9 +65,12 @@ def play():
 	print('\n')
 	print(b)
 	print(r1)
-	print('\n')
 	print(r2)
+	print("Bot type '{}' beat bot type '{}' by {} points".format(t1 if r1.score > r2.score else t2,\
+		t2 if r1.score > r2.score else t1, r1.score - r2.score if r1.score > r2.score else r2.score - r1.score))
 	print('\n')
 
 if __name__ == "__main__":
-	play()
+	if len(sys.argv) != 3:
+		print('Please enter the name of the two bots you would like to see play.\nAcceptable entries are "random", "base", and "alg".')
+	play(sys.argv[1], sys.argv[2])

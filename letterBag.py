@@ -4,11 +4,12 @@ remaining in a game of Scrabble.
 '''
 import util
 import numpy as np
+import copy
 
 
 class LetterBag:
 	def __init__(self):
-		self.letters = util.letterNums
+		self.letters = copy.copy(util.letterNums)
 		self.total = 98
 
 	'''

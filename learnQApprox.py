@@ -6,14 +6,14 @@ from util import oneHotIndices
 import random
 
 # Hyperparameters
-numGames = 2
+numGames = int(1e2)
 sampleProb = 0.25
-baseProbMax = 0.5
+baseProbMax = 0.25
 baseProbMin = 0.1
-epsilonMax = 0.5
+epsilonMax = 0.15
 epsilonMin = 0.05
-discount = .95
-learningRate = .2
+discount = .9
+learningRate = 1e-3
 
 '''
 '''
@@ -93,7 +93,7 @@ def qValDecision(plays, weights, bd):
 	bestPlay = None
 	bestVal = float('-inf')
 	for play in plays:
-		qval = approxQVal(convertToOneHot(bd.board, play[0], play[1]), weights)
+		qval = approxQVal(convertToOneHot(bd.board, play[0], play[1]), weights) + play[2]
 		if qval > bestVal:
 			bestPlay = play
 			bestVal = qval
@@ -116,7 +116,7 @@ def botTurn(bd, r, bg, botType, samples, weights, epsilon, count):
 			qval = 0
 			if np.random.rand() < epsilon:
 				play = random.choice(plays)
-				qval = approxQVal(convertToOneHot(bd.board, play[0], play[1]), weights)
+				qval = approxQVal(convertToOneHot(bd.board, play[0], play[1]), weights) + play[2]
 			else:
 				play, qval = qValDecision(plays, weights, bd)
 			
@@ -142,19 +142,18 @@ def main():
 	b = Board('dictionary.txt')
 
 	# initialize weights
-	w1 = np.random.rand(15*15*26)
+	w1 = np.load('approxFunc2.npy')
 	baseProb = baseProbMax
 	epsilon = epsilonMax
 
 	for i in range(numGames):
 		if i%10 == 0: print("played {} games".format(i))
 
-		if i % 100 == 1:
+		if i % 20 == 0:
 			print('Simulating 5 games against the baseline...')
 			diff = 0
-			for _ in range(1):
+			for _ in range(5):
 				bag = LetterBag()
-				print(bag.total)
 				r1 = Rack(bag.getLetters(7))
 				r2 = Rack(bag.getLetters(7))
 				refreshes = 0
@@ -164,13 +163,12 @@ def main():
 					else:
 						refreshes += 1
 
-					prob = np.random.rand()
 					if botTurn(b, r2, bag, 'base', [], None, 0, 0):
 						refreshes = 0
 					else:
 						refreshes += 1
 				diff += r1.score - r2.score
-			print("After {} games, the difference between the q-value approx method and baseline method is {} points".format((i,diff/5)))
+			print("After learning for {} games, the difference between the q-value approx method and baseline method is {} points".format(i,diff/5))
 
 
 		bag = LetterBag()
@@ -202,17 +200,39 @@ def main():
 		p2Reward = r2.score - r1.score
 		temp = np.copy(w1)
 		for sample in p1Samples:
-			w1 -= learningRate * (sample[2] - (sample[1][2] + np.power(discount,count-sample[3])*p1Reward))\
+			w1 += learningRate * (sample[2] - (sample[1][2] + np.power(discount,count-sample[3])*p1Reward))\
 				* convertToOneHot2(sample[0], sample[1][0], sample[1][1]).flatten()
 
 		if p2 == 'alg':
 			for sample in p2Samples:
-				w1 -= learningRate * (sample[2] - (sample[1][2] + np.power(discount,count-sample[3])*p2Reward))\
+				w1 += learningRate * (sample[2] - (sample[1][2] + np.power(discount,count-sample[3])*p2Reward))\
 					* convertToOneHot2(sample[0], sample[1][0], sample[1][1]).flatten()
 
 		b.reset()
 		baseProb -= (baseProbMax - baseProbMin) * (i/numGames)
 		epsilon -= (epsilonMax - epsilonMin) * (i/numGames)
+
+	print('Simulating 5 games against the baseline...')
+	diff = 0
+	for _ in range(5):
+		bag = LetterBag()
+		r1 = Rack(bag.getLetters(7))
+		r2 = Rack(bag.getLetters(7))
+		refreshes = 0
+		while not gameOver(refreshes):
+			if botTurn(b, r1, bag, 'alg', [], w1, 0, 0):
+				refreshes = 0
+			else:
+				refreshes += 1
+
+			if botTurn(b, r2, bag, 'base', [], None, 0, 0):
+				refreshes = 0
+			else:
+				refreshes += 1
+		diff += r1.score - r2.score
+	print("After learning for {} games, the difference between the q-value approx method and baseline method is {} points".format(numGames,diff/5))
+
+	saveWeights(w1, 'approxFunc3')
 
 
 if __name__ == "__main__":
