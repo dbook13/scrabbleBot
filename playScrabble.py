@@ -39,7 +39,7 @@ def humanTurn(board, rack, bg, shell):
 	# if not board.playWord: go back to start, else go on
 	# update rack with letters from shell input and score from board.playWord
 
-def main():
+def play():
 
 	# Initialize game
 	b = Board('dictionary.txt')
@@ -57,7 +57,7 @@ def main():
 			refreshes = 0
 		else:
 			refreshes += 1
-		if botTurn(b, r2, bag, 2, 'random'):
+		if botTurn(b, r2, bag, 2, 'base'):
 			refreshes = 0
 		else:
 			refreshes += 1
@@ -71,4 +71,4 @@ def main():
 	print('\n')
 
 if __name__ == "__main__":
-	main()
+	play()

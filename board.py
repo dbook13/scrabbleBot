@@ -24,10 +24,6 @@ class Board:
 		self.gdg = util.buildGaddag(filename)
 		self.letterScores = util.scores
 
-	# Helper function to check if a x or y value is in bounds on the board.
-	def inBounds(self, val):
-		return val >= 0 and val <= 14
-
 	'''
 	Printable version of the class, displays the words on the board and any
 	special spaces not covered by a letter.
@@ -52,6 +48,18 @@ class Board:
 					string += '\n'
 				else: string += ' '
 		return string
+
+	'''
+	'''
+	def reset(self):
+		self.board = np.empty((15,15), dtype=str)
+		self.anchors = {(7,7)}
+		self.verCrossSets = {}
+		self.horCrossSets = {}
+
+	# Helper function to check if a x or y value is in bounds on the board.
+	def inBounds(self, val):
+		return val >= 0 and val <= 14
 
 	'''
 	'''

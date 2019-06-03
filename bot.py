@@ -12,7 +12,7 @@ def chooseWord(board, rack, opp_rack, words, tpe):
 
 def baseDecision(words):
 	high = 0
-	decision = 0
+	decision = None
 	for word in words:
 		if word[2] > high:
 			decision = word
