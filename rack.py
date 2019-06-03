@@ -31,6 +31,10 @@ class Rack:
 			self.rack.remove(letter)
 		self.rack.extend(bag.getLetters(len(letters)))
 
+	def refresh(self, bag):
+		bag.returnLetters(self.rack)
+		self.rack = bag.getLetters(7)
+
 	'''
 	Returns true if all letters are in self.rack.
 	<letters> is an array of letters.

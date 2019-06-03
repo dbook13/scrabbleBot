@@ -3,13 +3,9 @@ x Implement botTurn in playScrabble
 x Implement humanTurn outline in playScrabble
 x Implement LetterBag
 x Implement Rack
-- Implement Board
-	x Initialize full size GADDAG
-	x Implement update
-	- Implement genPlayableWords
-	x Implement __str__
-- Finalize playScrabble to enable a game of scrabble to be played between two bots
-- Implement base
+x Implement Board
+x Implement base
+- Implement learning algorithm
 - Implement oracle
 - Implement shell
 - Implement human playable version

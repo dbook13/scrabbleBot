@@ -1,69 +1,74 @@
 '''
 Plays a game of Scrabble!
 '''
-import shell
-import board
-import rack
-import letterBag
+from board import Board
+from rack import Rack
+from letterBag import LetterBag
 from bot import chooseWord
 
-sh = Shell()
-
-# Get number of human players and bot type
-sh.display("Welcome to Scrabble!!")
-numHumans = -1
-while True:
-	numHumans = sh.getInput("Enter how many humans will be playing (0, 1, or 2): ")
-	if numHumans in [0,1,2]: break
-	sh.display('Invalid number')
-botType = None
-if numHumans > 0:
-	while True:
-		botType = sh.getInput("What type of bot would you like to play? (base, oracle, alg)")
-		if botType in ['base', 'oracle', 'alg']: break
-		sh.display('Invalid bot type')
-
-# Initialize game
-board = Board()
-bag = letterBag()
-r1 = Rack(bag.getLetters(7))
-r2 = Rack(bag.getLetters(7))
-
-# Have players take turns until game is done
-while not gameOver(r1, r2):
-	humanTurn()
-	botTurn(board, r2, r1, bag, botType)
-
-# Print end game message
-sh.display(board)
-sh.display()
-sh.display()
-
-
+'''
+Wait for the bot to play a word, update everything accordingly.
+'''
+def botTurn(bd, r, bg, playerNum, botType):
+	plays = bd.genPlayableWords(r.rack)
+	if plays:
+		play = chooseWord(bd, r, None, plays, botType)
+		print("Player {} plays {} from {} to {} for {} points".format(playerNum, play[0], play[1][0], play[1][1], play[2]))
+		leftovers = bd.update(play[0].upper(), play[1])
+		r.update(leftovers, play[2], bg)
+		return True
+	else:
+		print('No moves available, refreshing rack')
+		r.refresh(bg)
+		return False
 
 '''
-Returns true if both racks are empty.
+Returns true if no more moves can be played.
 '''
-def gameOver(rack1, rack2):
-	pass
+def gameOver(refreshes):
+	return refreshes > 5
 
 '''
 Wait for a human to play a word, update everything accordingly.
 '''
 def humanTurn(board, rack, bg, shell):
+	pass
 	# get input from shell and make sure it's a valid input
 	# rack.validLetters
 	# convert input from shell into a valid board input
 	# if not board.playWord: go back to start, else go on
 	# update rack with letters from shell input and score from board.playWord
 
-'''
-Wait for the bot to play a word, update everything accordingly.
-'''
-def botTurn(board, rack, opp_rack, bg, tpe):
-	words = board.genPlayableWords(rack)
-	word = chooseWord(board, rack, opp_rack, words, tpe)
-	leftovers = board.update(word[0], word[1])
-	rack.update(leftovers, word[2])
+def main():
 
+	# Initialize game
+	b = Board('dictionary.txt')
+	bag = LetterBag()
+	r1 = Rack(bag.getLetters(7))
+	r2 = Rack(bag.getLetters(7))
 
+	# Play game
+	count = 0
+	refreshes = 0
+	while not gameOver(refreshes):
+		if count % 10 == 0:
+			print("Have played {} turns".format(count))
+		if botTurn(b, r1, bag, 1, 'base'):
+			refreshes = 0
+		else:
+			refreshes += 1
+		if botTurn(b, r2, bag, 2, 'random'):
+			refreshes = 0
+		else:
+			refreshes += 1
+		count += 1
+
+	print('\n')
+	print(b)
+	print(r1)
+	print('\n')
+	print(r2)
+	print('\n')
+
+if __name__ == "__main__":
+	main()

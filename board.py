@@ -54,13 +54,176 @@ class Board:
 		return string
 
 	'''
+	'''
+	def adjSquare(self, loc, vert, switched):
+		if vert:
+			if switched:
+				return (loc[0]+1,loc[1])
+			else:
+				return (loc[0]-1,loc[1])
+		else:
+			if switched:
+				return (loc[0],loc[1]+1)
+			else:
+				return (loc[0],loc[1]-1)
+
+	'''
+	'''
+	def crossScore(self, pos, letterScore, letterMult, vert):
+		score = 0
+		(y,x)= pos
+
+		if vert:
+			y -= 1
+			while True:
+				if self.inBounds(y) and self.board[y,x] != '':
+					score += self.letterScores[self.board[y,x]]
+					y -= 1
+				else:
+					break
+
+			y = pos[0] + 1
+			while True:
+				if self.inBounds(y) and self.board[y,x] != '':
+					score += self.letterScores[self.board[y,x]]
+					y += 1
+				else:
+					break
+		else:
+			x -= 1
+			while True:
+				if self.inBounds(x) and self.board[y,x] != '':
+					score += self.letterScores[self.board[y,x]]
+					x -= 1
+				else:
+					break
+
+			x = pos[1] + 1
+			while True:
+				if self.inBounds(x) and self.board[y,x] != '':
+					score += self.letterScores[self.board[y,x]]
+					x += 1
+				else:
+					break
+
+		# return conditions
+		if score != 0:
+			return (score + letterScore) * letterMult
+		else:
+			return 0
+
+	'''
+	'''
+	def squareToWords(self, word, start, end, vert, switched, node, rack, words, rackLen, score, mult):
+		(y,x) = end if switched else start
+		nxt = self.adjSquare((y,x), vert, switched)
+		
+		if (not self.inBounds(y) or not self.inBounds(x)):
+				if '+' in node.edges:
+					newNode = node['+']
+					self.squareToWords(word, self.adjSquare(start, vert, True), self.adjSquare(end, vert, True), vert, True, newNode, rack, words, rackLen, score, mult)
+
+		elif self.board[y,x] != '':
+			newWord = word + self.board[y,x] if switched else self.board[y,x] + word
+			score = score + self.letterScores[self.board[y,x]]
+			if not self.inBounds(nxt[0]) or not self.inBounds(nxt[1]) or self.board[nxt] == '':
+				if self.board[y,x].lower() in node.letter_set and len(rack) < rackLen:
+					if (newWord, (start,end), score * mult + (50 if len(rack) == 0 and rackLen == 7 else 0)) not in words:
+						words.append((newWord, (start,end), score * mult + (50 if len(rack) == 0 and rackLen == 7 else 0)))
+			if self.board[y,x].lower() in node.edges:
+				newNode = node[self.board[y,x].lower()]
+				self.squareToWords(newWord, start if switched else nxt, nxt if switched else end, vert, switched, newNode, rack, words, rackLen, score, mult)
+
+		else:
+			for i in range(len(rack)):
+				letter = rack.pop(i)
+				newWord = word + letter if switched else letter + word
+				charScore = self.letterScores[letter]
+				charMult = 1
+				if (y,x) in self.specials:
+					if self.specials[(y,x)] == 'DW':
+						charMult *= 2
+					elif self.specials[(y,x)] == 'TW':
+						charMult *= 3
+					elif self.specials[(y,x)] == 'DL':
+						charScore *= 2
+					else:
+						charScore *= 3
+				newScore = score + charScore + self.crossScore((y,x), charScore, charMult, not vert)
+				newMult	= mult * charMult
+				if letter.lower() in node.letter_set and (not self.inBounds(nxt[0]) or not self.inBounds(nxt[1]) or self.board[nxt] == ''):
+					add = True
+					if vert and (y,x) in self.horCrossSets:
+						if letter.lower() not in self.horCrossSets[(y,x)]: add = False
+					if not vert and (y,x) in self.verCrossSets:
+						if letter.lower() not in self.verCrossSets[(y,x)]: add = False
+					if add and (newWord, (start,end), newScore * newMult + (50 if len(rack) == 0 and rackLen == 7 else 0)) not in words:
+						words.append((newWord, (start,end), newScore * newMult + (50 if len(rack) == 0 and rackLen == 7 else 0)))
+				if letter.lower() in node.edges:
+					add = True
+					if vert and (y,x) in self.horCrossSets:
+						if letter.lower() not in self.horCrossSets[(y,x)]: add = False
+					if not vert and (y,x) in self.verCrossSets:
+						if letter.lower() not in self.verCrossSets[(y,x)]: add = False
+					if add:
+						newNode = node[letter]
+						self.squareToWords(newWord, start if switched else nxt, nxt if switched else end, vert, switched, newNode, rack, words, rackLen, newScore, newMult)
+				rack.insert(i, letter)
+			if '+' in node.edges:
+				newNode = node['+']
+				self.squareToWords(word, self.adjSquare(start, vert, True), self.adjSquare(end, vert, True), vert, True, newNode, rack, words, rackLen, score, mult)
+
+	'''
 	Generates a list of tuples of all playable words given the current state of
 	the board and the passed in rack.
 	Rack should be an array of letters.
 	Returns tuples of the form (word, coords, score).
 	'''
 	def genPlayableWords(self, rack):
-		pass
+		words = []
+		seenAnchors = set()
+		node = self.gdg.root
+		for loc in self.anchors:
+			(y,x) = loc
+
+			# Vertical
+			if self.inBounds(y-1) and self.board[y-1,x] != '':
+				if (y-1,x,True) not in seenAnchors:
+					seenAnchors.add((y-1,x,True))
+					self.squareToWords("", (y-1,x), (y-1,x), True, False, node, rack, words, len(rack), 0, 1)
+			elif self.inBounds(y+1) and self.board[y+1,x] != '':
+				y += 1
+				while self.inBounds(y) and self.board[y,x] != '':
+					y += 1
+				y -= 1
+				if (y,x,True) not in seenAnchors:
+					seenAnchors.add((y,x,True))
+					self.squareToWords("", (y,x), (y,x), True, False, node, rack, words, len(rack), 0, 1)
+			else:
+				if (y,x,True) not in seenAnchors:
+					seenAnchors.add((y,x,True))
+					self.squareToWords("", (y,x), (y,x), True, False, node, rack, words, len(rack), 0, 1)
+			y = loc[0]
+
+			# Horizontal
+			if self.inBounds(x-1) and self.board[y,x-1] != '':
+				if (y,x-1,False) not in seenAnchors:
+					seenAnchors.add((y,x-1,False))
+					self.squareToWords("", (y,x-1), (y,x-1), False, False, node, rack, words, len(rack), 0, 1)
+			elif self.inBounds(x+1) and self.board[y,x+1] != '':
+				x += 1
+				while self.inBounds(x) and self.board[y,x] != '':
+					x += 1
+				x -= 1
+				if (y,x,False) not in seenAnchors:
+					seenAnchors.add((y,x,False))
+					self.squareToWords("", (y,x), (y,x), False, False, node, rack, words, len(rack), 0, 1)
+			else:
+				if (y,x,False) not in seenAnchors:
+					seenAnchors.add((y,x,False))
+					self.squareToWords("", (y,x), (y,x), False, False, node, rack, words, len(rack), 0, 1)
+
+		return words
 
 	'''
 	'''
@@ -114,15 +277,12 @@ class Board:
 			self.verCrossSets[pos] = []
 		else:
 			self.horCrossSets[pos] = []
-		count = 0
 		for word in intersection:
 			if len(word) != (len(prefix) + len(suffix) + 1): continue
-			count += 1
 			if vert:
 				self.verCrossSets[pos].append(word[len(prefix)])
 			else:
 				self.horCrossSets[pos].append(word[len(prefix)])
-		if count == 0: self.anchors.remove(pos)
 
 	'''
 	Calculates a cross set for a particular anchor square and word direction,
@@ -142,13 +302,18 @@ class Board:
 				
 				# Follow gaddag edges to beginning of word
 				while True:
-					node = node[self.board[y,x]]
+					if self.board[y,x].lower() not in node.edges:
+						node = None
+						break
+					node = node[self.board[y,x].lower()]
 					if self.board[y-1,x] == '': break
 					y -= 1
 
 				# Add CrossSet
-				if not node.letter_set: self.anchors.remove(pos)
-				self.verCrossSets[pos] = node.letter_set
+				if not node:
+					self.verCrossSets[pos] = []
+				else:
+					self.verCrossSets[pos] = node.letter_set
 			
 			# Same as above but for horizontal words
 			else:
@@ -157,42 +322,49 @@ class Board:
 					if not self.inBounds(x+1) or self.board[y,x+1] == '': break
 					x += 1
 				while True:
-					node = node[self.board[y,x]]
+					if self.board[y,x].lower() not in node.edges:
+						node = None
+						break
+					node = node[self.board[y,x].lower()]
 					if self.board[y,x-1] == '': break
 					x -= 1
-				if not node.letter_set: self.anchors.remove(pos)
-				self.horCrossSets[pos] = node.letter_set
+				if not node:
+					self.horCrossSets[pos] = []
+				else:
+					self.horCrossSets[pos] = node.letter_set
 		else:
 			if vert:
 				y -= 1
 
 				# Follow gaddag edges to beginning of word
 				while True:
-					node = node[self.board[y,x]]
+					if self.board[y,x].lower() not in node.edges:
+						node = None
+						break
+					node = node[self.board[y,x].lower()]
 					if not self.inBounds(y-1) or self.board[y-1,x] == '': break
 					y -= 1
 
 				# Add cross set if it exists
-				if '+' not in node.edges:
+				if not node or '+' not in node.edges:
 					self.verCrossSets[pos] = []
-					self.anchors.remove(pos)
 				else:
-					node = node['+']
-					self.verCrossSets[pos] = node.letter_set
+					self.verCrossSets[pos] = node['+'].letter_set
 			
 			# Same as above but for horizontal words
 			else:
 				x -= 1
 				while True:
-					node = node[self.board[y,x]]
+					if self.board[y,x].lower() not in node.edges:
+						node = None
+						break
+					node = node[self.board[y,x].lower()]
 					if not self.inBounds(x-1) or self.board[y,x-1] == '': break
 					x -= 1
-				if '+' not in node.edges:
+				if not node or '+' not in node.edges:
 					self.horCrossSets[pos] = []
-					self.anchors.remove(pos)
 				else:
-					node = node['+']
-					self.horCrossSets[pos] = node.letter_set
+					self.horCrossSets[pos] = node['+'].letter_set
 
 	'''
 	Updates self.board and self.anchors to reflect the newly added word.
@@ -206,12 +378,22 @@ class Board:
 		pos = 0
 		used = ''
 		vert = (end[0]-start[0], end[1]-start[1]) == (len(word)-1, 0)
-		potentials = []
+		potentials = set()
 		
 		# Add all letters to the board and find all anchor squares 
 		while(True):
 			if self.board[y,x] != '':
-				if (y,x) == end: break
+				if (y,x) == start:
+					if vert:
+						if self.inBounds(y-1): potentials.add(((y-1,x), vert, True))
+					else:
+						if self.inBounds(x-1): potentials.add(((y,x-1), vert, True))
+				elif (y,x) == end:
+					if vert:
+						if self.inBounds(y+1): potentials.add(((y+1,x), vert, False))
+					else:
+						if self.inBounds(x+1): potentials.add(((y,x+1), vert, False))
+					break
 				if vert:
 					y += 1
 				else:
@@ -219,22 +401,24 @@ class Board:
 				pos += 1
 				continue
 			if (y,x) in self.anchors: self.anchors.remove((y,x))
+			if (y,x) in self.verCrossSets: del self.verCrossSets[(y,x)]
+			if (y,x) in self.horCrossSets: del self.horCrossSets[(y,x)]
 			self.board[y,x] = word[pos]
 			used += word[pos]
 
 			# add all anchor squares to potentials
 			if vert:
 				# add all squares that might need to be edited
-				if self.inBounds(x-1): potentials.append(((y,x-1), not vert, True))
-				if self.inBounds(x+1): potentials.append(((y,x+1), not vert, False))
-				if (y,x) == start and self.inBounds(y-1): potentials.append(((y-1,x), vert, True))
-				if (y,x) == end and self.inBounds(y+1): potentials.append(((y+1,x), vert, False))
+				if self.inBounds(x-1): potentials.add(((y,x-1), not vert, True))
+				if self.inBounds(x+1): potentials.add(((y,x+1), not vert, False))
+				if (y,x) == start and self.inBounds(y-1): potentials.add(((y-1,x), vert, True))
+				if (y,x) == end and self.inBounds(y+1): potentials.add(((y+1,x), vert, False))
 			else:
 				# add all squares that might need to be edited
-				if self.inBounds(y-1): potentials.append(((y-1,x), not vert, True))
-				if self.inBounds(y+1): potentials.append(((y+1,x), not vert, False))
-				if (y,x) == start and self.inBounds(x-1): potentials.append(((y,x-1), vert, True))
-				if (y,x) == end and self.inBounds(x+1): potentials.append(((y,x+1), vert, False))
+				if self.inBounds(y-1): potentials.add(((y-1,x), not vert, True))
+				if self.inBounds(y+1): potentials.add(((y+1,x), not vert, False))
+				if (y,x) == start and self.inBounds(x-1): potentials.add(((y,x-1), vert, True))
+				if (y,x) == end and self.inBounds(x+1): potentials.add(((y,x+1), vert, False))
 
 			# update if not in end condition
 			if (y,x) == end: 
@@ -247,11 +431,56 @@ class Board:
 				pos += 1
 
 		# edit all potential squares
-		for p in potentials:
-			if self.board[p[0]]: continue
-			if p[0] in self.anchors:
-				self.gapSpace(p[0], p[1], p[2])
-				continue
+		for pot in potentials:
+			p = pot
+
+			# Traverse to end of existing word if a letter is in a potential square
+			if self.board[p[0]]:
+				(y,x) = p[0]
+				pos = None
+				if p[2]:
+					if p[1]:
+						while self.inBounds(y):
+							if not self.board[y,x]:
+								p = ((y,x), p[1], p[2])
+								break
+							y -= 1
+					else:
+						while self.inBounds(x):
+							if not self.board[y,x]:
+								p = ((y,x), p[1], p[2])
+								break
+							x -= 1
+				else:
+					if p[1]:
+						while self.inBounds(y):
+							if not self.board[y,x]:
+								p = ((y,x), p[1], p[2])
+								break
+							y += 1
+					else:
+						while self.inBounds(x):
+							if not self.board[y,x]:
+								p = ((y,x), p[1], p[2])
+								break
+							x += 1
+
+			# determine if gap space
+			if p[1]:
+				up = p[0][0] - 1
+				down = p[0][0] + 1
+				col = p[0][1]
+				if self.inBounds(up) and self.board[up,col] and self.inBounds(down) and self.board[down,col]:
+					self.gapSpace(p[0], p[1], p[2])
+					continue
+			else:
+				left = p[0][1] - 1
+				right = p[0][1] + 1
+				row = p[0][0]
+				if self.inBounds(left) and self.board[row,left] and self.inBounds(right) and self.board[row,right]:
+					self.gapSpace(p[0], p[1], p[2])
+					continue
+
 			self.anchors.add(p[0])
 			self.calcCrossSet(p[0], p[1], p[2])
 
