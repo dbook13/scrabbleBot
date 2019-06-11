@@ -1,7 +1,7 @@
 import random
 from util import oneHotIndices
 import numpy as np
-weights = np.load('approxFunc2.npy')
+weights = np.load('approxFunc.npy')
 
 def chooseWord(board, rack, opp_rack, words, tpe):
 	if tpe == 'base':
