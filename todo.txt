@@ -5,7 +5,7 @@ x Implement LetterBag
 x Implement Rack
 x Implement Board
 x Implement base
-- Implement learning algorithm
+x Implement learning algorithm
 - Implement oracle
 - Implement shell
 - Implement human playable version
